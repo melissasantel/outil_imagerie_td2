@@ -1,0 +1,702 @@
+module 'XApplication'
+version = 43;
+applicationName = 'XApplication';
+generateNameCPP = * '/users/disk6/prof/regis/pantheon/pandore4/src/operatorsP0/visualisation/VISU/visumotif2.cc';
+generateCPixmapFile = '';
+generateCHeaderFile = '';
+generateCPPHeaderFile = '';
+generateMask = 98316;
+useMask = 1;
+ansiC = 1;
+generateNewMakefile = 1;
+generateMakeTemplate = 0;
+useCPixmaps = 0;
+useUILPixmaps = 0;
+useCHeaders = 0;
+useCUILHeaders = 0;
+CPPFlavour = 0;
+useCPPHeaders = 0;
+useCPPHeadersMFCWindows = 0;
+useCPPHeadersMFCMotif = 0;
+object 'cadre2' : XmDialogShell {
+	arguments {
+	lastGenName = 'cadre2';
+	createPreludeStatus = 1;
+	preInstantiation = 'void create_cadre2 (Widget parent)
+';
+	XmNallowShellResize = true;
+	};
+};
+object 'cadre' : XmDialogShell {
+	arguments {
+	lastGenName = 'cadre';
+	createPreludeStatus = 2;
+	preInstantiation = 'void create_cadre (Display *display, char *app_name, int app_argc, char **app_argv)
+';
+	XmNallowShellResize = true;
+	XmNprimary = 1;
+	};
+object 'baseform' : XmForm {
+	arguments {
+	lastGenName = 'baseform';
+	XmNautoUnmanage = false;
+	};
+object 'slices' : XmScale {
+	arguments {
+	lastGenName = 'slices';
+	generateResName = true;
+	XmNx = 0;
+	XmNy = 0;
+	XmNsensitive = false;
+	XmNtopShadowColor = color('#d6d6d6d6e7e7');
+	XmNbottomShadowColor = color('#555555556a6a');
+	XmNshowValue = true;
+	XmNorientation = 2;
+	XmNscaleMultiple = 1;
+	};
+	callbacks {
+	XmNvalueChangedCallback = '
+changeSlice( )
+';
+	};
+};
+object '1' : XmScrolledWindow {
+	arguments {
+	lastGenName = 'scrolledWin1';
+	XmNscrollingPolicy = 0;
+	};
+object 'hscrollbar' : XmScrollBar {
+	arguments {
+	name = 'HorScrollBar';
+	lastGenName = 'hscrollbar';
+	};
+};
+object 'vscrollbar' : XmScrollBar {
+	arguments {
+	name = 'VertScrollBar';
+	lastGenName = 'vscrollbar';
+	};
+};
+object 'tableau' : XmDrawingArea {
+	arguments {
+	lastGenName = 'tableau';
+	XmNwidth = 500;
+	XmNheight = 500;
+	};
+	callbacks {
+	XmNexposeCallback = '
+afficheImage( )
+';
+	};
+object 'menu' : XmPopupMenu {
+	arguments {
+	lastGenName = 'menu';
+	};
+object '1' : XmLabel GADGET {
+	arguments {
+	lastGenName = 'label1';
+	XmNlabelString =  * 'Pandore V3.0';
+	};
+};
+object '1' : XmSeparator {
+	arguments {
+	lastGenName = 'separator1';
+	};
+};
+object 'mvals' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'mvals';
+	XmNlabelString =  * 'Values';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuValeurs( )
+';
+	};
+};
+object 'mhisto' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'mhisto';
+	XmNlabelString =  * 'Histogram';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuHistogramme( )
+';
+	};
+};
+object 'mprof' : XmCascadeButton {
+	arguments {
+	lastGenName = 'mprof';
+	XmNlabelString =  * 'Profile';
+	};
+object '1' : XmPulldownMenu {
+	arguments {
+	lastGenName = 'menu1';
+	};
+object 'mlig' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'mlig';
+	XmNlabelString =  * 'Row';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuProfil( (XtPointer)0 )
+';
+	};
+};
+object 'mcol' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'mcol';
+	XmNlabelString =  * 'Column';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuProfil( (XtPointer)1 )
+';
+	};
+};
+};
+};
+object '1' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'button1';
+	XmNlabelString =  * 'Lut';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuLut( )
+';
+	};
+};
+object '1' : XmCascadeButton {
+	arguments {
+	lastGenName = 'cascade1';
+	XmNlabelString =  * 'Zoom';
+	};
+object '2' : XmPulldownMenu {
+	arguments {
+	lastGenName = 'menu2';
+	};
+object 'x1' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'x1';
+	XmNlabelString =  * ': 4';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuZoom( (XtPointer)4 )
+';
+	};
+};
+object 'x2' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'x2';
+	XmNlabelString =  * ': 3';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuZoom( (XtPointer)-3 )
+';
+	};
+};
+object 'x3' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'x3';
+	XmNlabelString =  * ': 2';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuZoom( (XtPointer)-2 )
+';
+	};
+};
+object 'x4' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'x4';
+	XmNlabelString =  * '= 1';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuZoom( (XtPointer)1 )
+';
+	};
+};
+object 'x5' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'x5';
+	XmNlabelString =  * 'x 2';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuZoom( (XtPointer)2 )
+';
+	};
+};
+object 'x6' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'x6';
+	XmNlabelString =  * 'x 3';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuZoom( (XtPointer)3 )
+';
+	};
+};
+object 'x7' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'x7';
+	XmNlabelString =  * 'x 4';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuZoom( (XtPointer)4 )
+';
+	};
+};
+};
+};
+object 'mseuil' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'mseuil';
+	XmNlabelString =  * 'Threshold';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuSeuillage( )
+';
+	};
+};
+object 'mprops' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'mprops';
+	XmNlabelString =  * 'Properties';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuProp( )
+';
+	};
+};
+object '3' : XmSeparator {
+	arguments {
+	lastGenName = 'separator3';
+	};
+};
+object 'mdrawing' : XmCascadeButton {
+	arguments {
+	lastGenName = 'mdrawing';
+	XmNlabelString =  * 'Drawing';
+	};
+object '3' : XmPulldownMenu {
+	arguments {
+	lastGenName = 'menu3';
+	};
+object 'undo' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'undo';
+	XmNlabelString =  * 'Undo';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuAnnuler( )
+';
+	};
+};
+object 'clear' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'clear';
+	XmNlabelString =  * 'Clear';
+	};
+	callbacks {
+	XmNactivateCallback = '
+MenuEffacer( )
+';
+	};
+};
+};
+};
+object '2' : XmSeparator {
+	arguments {
+	lastGenName = 'separator2';
+	};
+};
+object '2' : XmPushButton GADGET {
+	arguments {
+	lastGenName = 'button2';
+	XmNlabelString =  * 'Quit';
+	};
+	callbacks {
+	XmNactivateCallback = '
+Sortie( )
+';
+	};
+};
+};
+};
+};
+    attachments {
+    attachment {
+	XmNrightAttachment = 0 0 0;
+	XmNleftAttachment = 1 0 0;
+	XmNbottomAttachment = 0 0 0;
+	XmNtopAttachment = 1 0 0;
+    };
+    attachment {
+	XmNleftAttachment = 1 0;
+	XmNtopAttachment = 3 1;
+    };
+    };
+};
+};
+object 'sprofil' : XmDialogShell {
+	arguments {
+	lastGenName = 'sprofil';
+	createPreludeStatus = 2;
+	preInstantiation = 'void create_sprofil (Widget parent)
+';
+	XmNallowShellResize = true;
+	};
+object '1' : XmBulletinBoard {
+	arguments {
+	lastGenName = 'bulletin1';
+	XmNautoUnmanage = false;
+	XmNnoResize = true;
+	};
+object 'fprofil' : XmDrawingArea {
+	arguments {
+	lastGenName = 'fprofil';
+	};
+	callbacks {
+	XmNexposeCallback = '
+afficheProfil( )
+';
+	};
+};
+};
+};
+object 'svaleurs' : XmDialogShell {
+	arguments {
+	lastGenName = 'svaleurs';
+	createPreludeStatus = 2;
+	preInstantiation = 'void create_svaleurs (Widget parent)
+';
+	XmNallowShellResize = true;
+	};
+object '2' : XmBulletinBoard {
+	arguments {
+	lastGenName = 'bulletin2';
+	XmNautoUnmanage = false;
+	XmNnoResize = true;
+	};
+object 'fvaleurs' : XmDrawingArea {
+	arguments {
+	lastGenName = 'fvaleurs';
+	XmNwidth = 500;
+	XmNheight = 170;
+	XmNmarginWidth = 1;
+	XmNmarginHeight = 1;
+	};
+	callbacks {
+	XmNexposeCallback = '
+afficheValeurs( )
+';
+	};
+};
+};
+};
+object 'sseuil' : XmDialogShell {
+	arguments {
+	lastGenName = 'sseuil';
+	createPreludeStatus = 2;
+	preInstantiation = 'void create_sseuil (Widget parent)
+';
+	XmNwidth = 350;
+	XmNallowShellResize = true;
+	XmNtitle =  * 'Threshold';
+	};
+object 'fseuil' : XmBulletinBoard {
+	arguments {
+	lastGenName = 'fseuil';
+	XmNautoUnmanage = false;
+	XmNnoResize = true;
+	};
+object 'fseuilb' : XmScale {
+	arguments {
+	lastGenName = 'fseuilb';
+	XmNx = 11;
+	XmNy = 10;
+	XmNwidth = 249;
+	XmNheight = 60;
+	XmNtitleString =  * 'Below thresholding';
+	XmNshowValue = true;
+	XmNorientation = 2;
+	};
+	callbacks {
+	XmNvalueChangedCallback = '
+AjusteSeuilBas( )
+';
+	};
+};
+object 'fseuilh' : XmScale {
+	arguments {
+	lastGenName = 'fseuilh';
+	XmNx = 10;
+	XmNy = 80;
+	XmNwidth = 250;
+	XmNheight = 60;
+	XmNtitleString =  * 'Top thresholding';
+	XmNshowValue = true;
+	XmNorientation = 2;
+	};
+	callbacks {
+	XmNvalueChangedCallback = '
+AjusteSeuilHaut( )
+';
+	};
+};
+};
+};
+object 'slut' : XmDialogShell {
+	arguments {
+	lastGenName = 'slut';
+	createPreludeStatus = 2;
+	preInstantiation = 'void create_slut (Widget parent)
+';
+	XmNallowShellResize = true;
+	XmNtitle =  * 'Colors';
+	};
+object 'lutbaseform' : XmForm {
+	arguments {
+	lastGenName = 'lutbaseform';
+	XmNautoUnmanage = false;
+	XmNnoResize = true;
+	};
+object 'flut' : XmRadioBox {
+	arguments {
+	lastGenName = 'flut';
+	XmNorientation = 1;
+	};
+object '1' : XmToggleButton GADGET {
+	arguments {
+	lastGenName = 'toggle1';
+	XmNlabelString =  * 'Original';
+	XmNselectColor = color('#ffff00000000');
+	};
+	callbacks {
+	XmNarmCallback = '
+changeLut( (XtPointer)0 )
+';
+	};
+};
+object '2' : XmToggleButton GADGET {
+	arguments {
+	lastGenName = 'toggle2';
+	XmNlabelString =  * 'Négatif';
+	XmNselectColor = color('#ffff00000000');
+	};
+	callbacks {
+	XmNarmCallback = '
+changeLut( (XtPointer)1 )
+';
+	};
+};
+object '3' : XmToggleButton GADGET {
+	arguments {
+	lastGenName = 'toggle3';
+	XmNlabelString =  * 'Color';
+	XmNselectColor = color('#ffff00000000');
+	};
+	callbacks {
+	XmNarmCallback = '
+changeLut( (XtPointer)2 )
+';
+	};
+};
+object '4' : XmToggleButton GADGET {
+	arguments {
+	lastGenName = 'toggle4';
+	XmNlabelString =  * 'Region';
+	XmNselectColor = color('#ffff00000000');
+	};
+	callbacks {
+	XmNarmCallback = '
+changeLut( (XtPointer)3 )
+';
+	};
+};
+object '5' : XmToggleButton GADGET {
+	arguments {
+	lastGenName = 'toggle5';
+	XmNlabelString =  * 'Random';
+	XmNselectColor = color('#ffff00000000');
+	};
+	callbacks {
+	XmNarmCallback = '
+changeLut( (XtPointer)4 )
+';
+	};
+};
+object '6' : XmToggleButton GADGET {
+	arguments {
+	lastGenName = 'toggle6';
+	XmNlabelString =  * 'Rainbow';
+	XmNselectColor = color('#ffff00000000');
+	};
+	callbacks {
+	XmNarmCallback = '
+changeLut( (XtPointer)5 )
+';
+	};
+};
+object '7' : XmToggleButton GADGET {
+	arguments {
+	lastGenName = 'toggle7';
+	XmNlabelString =  * 'Noise';
+	XmNselectColor = color('#ffff00000000');
+	};
+	callbacks {
+	XmNarmCallback = '
+changeLut( (XtPointer)6 )
+';
+	};
+};
+};
+object 'scontrast' : XmScale {
+	arguments {
+	lastGenName = 'scontrast';
+	generateResName = true;
+	XmNtitleString =  * 'Contrast';
+	XmNshowValue = true;
+	XmNminimum = -100;
+	XmNmaximum = 100;
+	XmNorientation = 2;
+	};
+	callbacks {
+	XmNvalueChangedCallback = '
+changeContrast( )
+';
+	};
+};
+object 'sbrightness' : XmScale {
+	arguments {
+	lastGenName = 'sbrightness';
+	generateResName = true;
+	XmNtitleString =  * 'brightness';
+	XmNshowValue = true;
+	XmNminimum = -100;
+	XmNmaximum = 100;
+	XmNorientation = 2;
+	};
+	callbacks {
+	XmNvalueChangedCallback = '
+changeBrightness( )
+';
+	};
+};
+object 'fpalette' : XmDrawingArea {
+	arguments {
+	lastGenName = 'fpalette';
+	generateResName = true;
+	XmNwidth = 255;
+	XmNheight = 20;
+	};
+	callbacks {
+	XmNexposeCallback = '
+changePalette( )
+';
+	};
+};
+    attachments {
+    attachment {
+	XmNrightAttachment = 0 0 0;
+	XmNleftAttachment = 1 0 0;
+	XmNbottomAttachment = 0 0 0;
+	XmNtopAttachment = 1 0 -1;
+    };
+    attachment {
+	XmNrightAttachment = 0 0 0;
+	XmNleftAttachment = 1 0 105;
+	XmNbottomAttachment = 0 0 0;
+	XmNtopAttachment = 1 0 20;
+    };
+    attachment {
+	XmNrightAttachment = 0 0 0;
+	XmNleftAttachment = 1 0 105;
+	XmNbottomAttachment = 0 0 0;
+	XmNtopAttachment = 1 0 100;
+    };
+    attachment {
+	XmNrightAttachment = 0 0 0;
+	XmNleftAttachment = 1 0 -1;
+	XmNbottomAttachment = 0 0 0;
+	XmNtopAttachment = 1 0 188;
+    };
+    };
+};
+};
+object 'shisto' : XmDialogShell {
+	arguments {
+	lastGenName = 'shisto';
+	createPreludeStatus = 2;
+	preInstantiation = 'void create_shisto (Widget parent)
+';
+	XmNallowShellResize = true;
+	XmNtitle =  * 'Histogram';
+	};
+object '3' : XmBulletinBoard {
+	arguments {
+	lastGenName = 'bulletin3';
+	folded = true;
+	XmNautoUnmanage = false;
+	XmNnoResize = true;
+	};
+object 'fhisto' : XmDrawingArea {
+	arguments {
+	lastGenName = 'fhisto';
+	XmNwidth = 320;
+	XmNheight = 150;
+	XmNmarginWidth = 1;
+	XmNmarginHeight = 1;
+	};
+	callbacks {
+	XmNexposeCallback = '
+afficheHistogramme( )
+';
+	};
+};
+};
+};
+object 'sprops' : XmDialogShell {
+	arguments {
+	lastGenName = 'sprops';
+	createPreludeStatus = 2;
+	preInstantiation = 'void create_sprops (Widget parent)
+';
+	XmNallowShellResize = true;
+	XmNtitle =  * 'Properties';
+	};
+object '4' : XmBulletinBoard {
+	arguments {
+	lastGenName = 'bulletin4';
+	XmNautoUnmanage = false;
+	XmNnoResize = true;
+	};
+object 'fprops' : XmDrawingArea {
+	arguments {
+	lastGenName = 'fprops';
+	XmNwidth = 320;
+	XmNheight = 150;
+	XmNmarginWidth = 1;
+	XmNmarginHeight = 1;
+	};
+	callbacks {
+	XmNexposeCallback = '
+afficheProperties( )
+';
+	};
+};
+};
+};
+end module;

@@ -1,0 +1,1115 @@
+#!/bin/sh
+## @file configure
+##
+## PANDORE
+##  
+## @author Alexandre Duret-Lutz 1999-12-12
+## @author Regis Clouard - 2001-04-12 (version 3)
+## @author Regis Clouard - 2004-02-06 (+linux)
+## @author Regis Clouard - 2004-02-06 (+MACOSX)
+## @author Regis Clouard - 2005-08-02 (+Qt)
+## @author Regis Clouard - 2005-09-27 (+add Pandore boxes)
+##
+## GREYC - IMAGE
+## 6, boulevard Marechal Juin 14050 CAEN.
+
+##
+## If needed configure the following parameters
+##
+
+PERL='perl'
+
+CXX=${CXX-g++}
+LD=${LD-$CXX}
+
+MAKE=${MAKE-make}
+#MAKE=${MAKE-make -j6}  # sport versions
+
+RM='rm -f'
+AR='ar'
+ARFLAGS='lrcv'
+COPY='cp -f'
+COPY_FILE='$(COPY)'
+COPY_DIR='$(COPY) -R'
+LN_S='ln -sf'
+
+# C++ compiler and linker additional flags
+CFLAGS=
+LDFLAGS=
+
+# Eventually, the X11 and Motif directories.
+X11INCLUDEPATH=
+X11LIBPATH=
+MOTIFLIBPATH=
+MOTIFINCLUDEPATH=
+
+# With static pandore library version ?
+CFG_STATIC=no
+
+
+
+
+
+
+
+
+
+
+
+
+##
+## No changes need to be made after these lines
+## DO NOT EDIT BY HAND
+##
+
+bindir=.
+# the directory of the script
+config_path=`dirname $0`
+config_path=`(cd $config_path; pwd)`
+# the name of this script
+config_name=`basename $0`
+# later cache the command line in config.status
+config_cmdline=`echo $@ | sed "s,-v ,,g; s,-v$,,g"`
+
+##
+## 1. ARGS
+## Reading configure arguments
+##
+while :
+do
+    case $# in
+    0)
+	break
+	;;
+    esac
+
+    option=$1
+    shift
+
+    case $option in
+    --*=*)
+	optarg=`echo $option | sed -e 's/^[^=]*=//'`
+	arguments="$arguments $option"
+	;;
+    esac
+    case $option in
+    --prefix* | --pre*)
+	bindir=$optarg/bin
+	;;
+    --bindir*)
+	bindir=$optarg
+	;;
+    --with-qmake*)
+	qmake4=$optarg
+	;;
+    --static*)
+	CFG_STATIC=yes
+	;;
+    --with-x11-includes*)
+	X11INCLUDEPATH=$optarg
+	;;
+    --with-x11-librairies*)
+	X11LIBPATH=$optarg
+	;;
+    --with-motif-includes*)
+	MOTIFINCLUDEPATH=$optarg
+	;;
+    --with-motif-librairies*)
+	MOTIFLIBPATH=$optarg
+	;;
+    -help | --help | --hel | --he)
+    # Omit some internal or obsolete options to make the list less imposing.
+    # This message is too long to be a string in the A/UX 3.1 sh.
+    cat << EOF
+usage: configure [options]
+Options: [defaults in brackets after descriptions]
+Configuration:
+  --help                       print this message
+  --with-qmake=file            specify the qmake program.
+  --with-x11-includes=DIR      X include files are in DIR
+  --with-x11-libraries=DIR     X libraries files are in DIR
+  --with-motif-includes=DIR    Motif include files are in DIR
+  --with-motif-libraries=DIR   Motif libraries files are in DIR
+Directory and file names:
+  --prefix=PREFIX         install the 'pandore' script in PREFIX/bin
+  --bindir=DIR            user executables in DIR [PREFIX/bin]
+  --static		  add the static version of the pandore library
+EOF
+    exit 0;
+    ;;
+
+    *)
+    echo "${option}: invalid command-line switch"
+    exit 1
+    ;;
+    esac
+done
+
+##
+## 2. ECHO
+##
+
+# Find flavor for echoing a string without a NEWLINE
+# (ew_c: echo with \c, ew_n: echo with -n, ew_t: tabulation)
+if (echo "example\c"; echo 1,2,3) | grep c >/dev/null; then 
+  if (echo -n example; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then 
+    ew_n= ew_c=' 
+' ew_t='        ' 
+  else
+    ew_n=-n ew_c= ew_t=
+  fi 
+else 
+  ew_n= ew_c='\c' ew_t=
+fi
+
+##
+## 3. OS
+##
+
+# Try to figure the system we have
+echo $ew_n "checking target system type""... $ew_c"
+# determine the kind of the machine which is running this script
+os=`uname -s`
+version=`uname -r`
+machine=`uname -m`
+
+MACHINE=$os-$version-$machine
+
+case $MACHINE in
+  SunOS-4*)  OS=SUNOS4;;
+  SunOS-5*)  OS=SUNOS5;;
+  CYGWIN*|MSYS*|MINGW*) OS=WIN32;;
+  Linux*)    OS=LINUX_ELF;;
+  Darwin*)   OS=MACOSX;;
+
+  OSF1*)     OS=OSF1;;
+  ULTRIX*)   OS=ULTRIX;;
+  HP*)	     OS=HPUX; DFLGS="$DFLGS -Dhpux";;
+  NetBSD-1*) OS=NETBSD1;;
+  FreeBSD*)  OS=FREEBSD;;
+  IRIX-5*)   OS=IRIX5;;
+  IRIX*-6*)  OS=IRIX5;;
+  *)         { echo "configure: error: this operating system is not supported" 1>&2; exit 1; } ;;
+esac
+echo "$ew_t""$MACHINE"
+
+##
+## 4. CXX
+##
+
+# Configure the dynamic loading options for CXX
+OBJ_FLAGS="";
+SHARED_LIB_FLAGS="";
+LIB_FLAGS="";
+LIB_NAME="pandore";
+LIB_PREFIX="lib";
+LIB_SUFFIX="";
+STKLDFLAGS=""
+LIBPATH=LD_LIBRARY_PATH
+QMAKEOPT=
+
+echo $ew_n "checking dynamic loading options for $OS""... $ew_c"
+
+case $OS in 
+  SUNOS4)
+     OBJ_FLAGS="-fpic"
+     SHARED_LIB_FLAGS="-assert pure-text"
+     LD=${LD-$CXX}
+     STATIC_LIB_SUFFIX='a'
+     DYN_LIB_SUFFIX='so' ;;
+   SUNOS5)
+     OBJ_FLAGS="-fpic"
+     CFLAGS="$CFLAGS -s"
+     SHARED_LIB_FLAGS='-G -z nodefs'
+     LD=${LD-$CXX}
+     STATIC_LIB_SUFFIX='a'
+     DYN_LIB_SUFFIX='so';;
+   LINUX_ELF)
+     OBJ_FLAGS='-fpic'
+     CFLAGS="$CFLAGS -s"
+     SHARED_LIB_FLAGS='-shared'
+     LD=${LD-$CXX}
+     STATIC_LIB_SUFFIX='a'
+     DYN_LIB_SUFFIX='so' 
+     # Under ELF, use the -rdynamic option at ld phase
+     STKLDFLAGS=-rdynamic;;
+   WIN32)
+     OBJ_FLAGS=''
+     LD=${LD-$CXX}
+     SHARED_LIB_FLAGS='-shared -Wl,--enable-auto-import'
+     LIBPATH=PATH
+     LIB_FLAGS='-Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc'
+     LIB_PREFIX=""
+     STATIC_LIB_SUFFIX='lib'
+     DYN_LIB_SUFFIX='dll' ;;
+   MACOSX)
+    case "$MACHINE" in
+      darwin1.[[012]]*)
+        OBJ_FLAGS="-undefined suppress"
+	QMAKEOPT="-spec macx-g++"
+	;;
+      *)
+	OBJ_FLAGS="-fno-common -flat_namespace -undefined suppress"
+	QMAKEOPT="-spec macx-g++"
+	;;
+    esac
+     SHARED_LIB_FLAGS="-dynamiclib -dynamic -fno-common -flat_namespace -undefined suppress"
+     LIBPATH=DYLD_LIBRARY_PATH
+     LD=${LD-$CXX}
+     STATIC_LIB_SUFFIX='a'
+     DYN_LIB_SUFFIX="dylib" ;;
+   OSF1)
+     OBJ_FLAGS="-fpic"
+     SHARED_LIB_FLAGS="-shared"
+     LD=${LD-$CXX}
+     LIBPATH=LD_LIBRARY_PATH
+     STATIC_LIB_SUFFIX='a'
+     DYN_LIB_SUFFIX='so' ;;
+   NETBSD1) 
+     OBJ_FLAGS="-fpic"
+     SHARED_LIB_FLAGS="-Bshareable"
+     LD=${LD-$CXX}
+     LIBPATH=LD_LIBRARY_PATH
+     STATIC_LIB_SUFFIX='a'
+     DYN_LIB_SUFFIX='so';;
+   FREEBSD)
+     OBJ_FLAGS="-fpic"
+     SHARED_LIB_FLAGS="-shared"
+     LD=${LD-$CXX}
+     STKLDFLAGS=-rdynamic
+     LIBPATH=LD_LIBRARY_PATH
+     STATIC_LIB_SUFFIX='a'
+     DYN_LIB_SUFFIX='so';;
+   IRIX5)
+     if test "$CXX"="g++"
+     then 
+       OBJ_FLAGS="-fpic"
+     else
+       OBJ_FLAGS="-KPIC"
+     fi
+     SHARED_LIB_FLAGS="-shared"
+     LD=${LD-$CXX}
+     LIBPATH=LD_LIBRARY_PATH
+     STATIC_LIB_SUFFIX='a'
+     DYN_LIB_SUFFIX='so' ;;
+   *) { echo "configure: error: don't know how to build shared libraries" 1>&2; exit 1; } ;;
+esac
+
+echo "$ew_t""yes"
+
+
+
+# Check CXX facilities
+echo $ew_n "checking C++ compiler""... $ew_c"
+cat > tmp.cpp <<EOF
+template<typename T> struct foo {
+template<typename U> static bool bar(U u) { return true; }
+};
+int main() { return foo<int>::bar(12); }
+EOF
+
+if $CXX -c -o tmp.o tmp.cpp 2>/dev/null
+then
+    echo "$ew_t""$CXX"
+else
+    echo "$ew_t""no."
+    echo "*** Error: Pandore won't compile, please set CXX variable with the C++ compiler path (export CXX=<path>) before executing configure." 1>&2; exit 1;
+fi
+
+echo $ew_n "checking linker""... $ew_c"
+if $LD -o tmp.exe tmp.o 2>/dev/null
+then
+    echo "$ew_t""$LD"
+else
+    echo "$ew_t""no."
+   echo "*** Error: Pandore won't compile, please set LD variable with the linker path (export LD=<path>) before executing configure." 1>&2; exit 1;
+fi
+
+$RM tmp.o tmp.exe
+echo $ew_n "checking $MAKE""... $ew_c"
+cat > tmp.mak <<EOF
+tmp.exe:  tmp.cpp
+	$CXX -o tmp.exe tmp.cpp 2>/dev/null
+EOF
+
+if $MAKE -f tmp.mak 2>/dev/null 1>&2
+then
+    echo "$ew_t""$MAKE"
+else
+    echo "$ew_t""no."
+    echo "*** Error: Pandore won't compile, please set MAKE variable with the make path (export MAKE=<path>) before executing configure." 1>&2; exit 1;
+fi
+
+$RM tmp.cpp tmp.mak tmp.exe
+
+## set compiler options.
+CXXFLAGS="$CFLAGS -DNDEBUG -O2 -Iinclude -pedantic"
+CXXFLAGSOBJ="$OBJ_FLAGS"
+CXXFLAGSOP="-DMAIN" #-DDEBUG=0 
+for d in src/operatorsP*
+do
+CXXFLAGSOP="$CXXFLAGSOP -I$d"
+done
+LDFLAGSLIB="$SHARED_LIB_FLAGS"
+LDFLAGSOP="-Llib -lpandore $LIB_FLAGS"
+
+##
+## 5. PERL
+##
+
+# Check Perl version
+echo $ew_n "checking perl binary""... $ew_c"
+binperl=0;
+if test -n "$PERL"
+then
+    if ( $PERL -e '#test' ) 2>/dev/null
+    then
+	binperl=1;
+    fi
+fi
+
+if test $binperl -eq 0
+then
+    PERL=""
+    echo "$ew_t""no"
+else
+    echo "$ew_t""yes"
+fi
+
+PPP="${PERL} -Ietc/macros etc/macros/template.pl etc/macros/pand_macros"
+
+##
+## 6. VIEWERS
+##
+gui_type="";
+macapp=0
+
+# 7.A. Qt version 
+echo $ew_n "checking Qt version >= 4.0.0""... $ew_c"
+
+if [ -z "$qmake4" ]
+then
+#looking for qmake for Qt4.
+
+qmake4=qmake
+if (type qmake-qt4) 2>/dev/null 1>&2
+then
+if (diff "`which qmake`" "`which qmake-qt4`") 2>/dev/null 1>&2
+then
+qmake4=qmake
+else
+qmake4=qmake-qt4
+fi
+elif (type qmake4) 2>/dev/null 1>&2
+then
+if (diff "`which qmake`" "`which qmake4`") 2>/dev/null 1>&2
+then
+qmake4=qmake
+else
+qmake4=qmake4
+fi
+fi
+fi
+
+cat > qtver.cpp <<EOF
+#include <stdio.h>
+#include <qglobal.h>
+int main(int argc, char *argv[]){
+  printf("%s\n",QT_VERSION_STR);
+  if (argc > 1) {
+    int numCurrent;
+    int numGiven;
+    sscanf(QT_VERSION_STR,"%d.%*s",&numCurrent);
+    sscanf(argv[1],"%d.%*s",&numGiven);
+    return !(numGiven<= numCurrent);
+  }
+}
+EOF
+
+cat >qtver.pro <<EOF
+SOURCES = qtver.cpp
+TARGET = qtver
+EOF
+
+if (${qmake4} $QMAKEOPT qtver.pro -o qtver.mak && make -f qtver.mak) 2>/dev/null 1>/dev/null
+then
+visu_exe="bin/pvisu"
+draw_exe="bin/pdraw"
+exe="./qtver";
+#particular cases
+if [ "$OS" = "MACOSX" ]
+then
+   if [ -x qtver.app/Contents/MacOS/qtver ]
+   then
+	exe="qtver.app/Contents/MacOS/qtver";
+	visu_exe="bin/pvisu.app/Contents/MacOS/pvisu"
+	draw_exe="bin/pdraw.app/Contents/MacOS/pdraw"
+	macapp=1;
+   else exe="./qtver";
+   fi
+fi
+if [ "$OS" = "WIN32" -a -x ./release/qtver.exe ]
+then
+    exe="./release/qtver"
+fi
+
+if ($exe 4.0.0) 2>/dev/null 1>/dev/null
+then
+    gui_version=`$exe`
+    echo "$ew_t""yes ($gui_version)"
+    echo setting `type $qmake4`
+
+    gui_type="Qt";
+else
+    gui_version=`$exe`
+    echo "$ew_t""no. (version $gui_version found!)"
+fi
+else
+    echo "$ew_t""no"
+fi
+
+
+$RM -r $exe qtver.pro qtver.cpp qtver.o qtver.mak
+
+# 7.B. Motif version
+if [ "x$gui_type" = "x" ]
+then
+echo $ew_n "checking Motif version""... $ew_c"
+gui_type="Motif"
+
+if [ -z "$X11INCLUDEPATH" ]
+then
+# Look for the header file in a standard set of common directories.
+x_direct_test_include=X11/Xlib.h
+# Check X11 before X11Rn because it is often a symlink to the current release.
+  for ac_dir in               \
+    /usr/openwin/include      \
+    /usr/openwin/share/include \
+			      \
+    /usr/X11/include          \
+    /usr/X11R6/include        \
+    /usr/X11R5/include        \
+    /usr/X11R4/include        \
+                              \
+    /usr/include/X11          \
+    /usr/include/X11R6        \
+    /usr/include/X11R5        \
+    /usr/include/X11R4        \
+                              \
+    /usr/local/X11/include    \
+    /usr/local/X11R6/include  \
+    /usr/local/X11R5/include  \
+    /usr/local/X11R4/include  \
+                              \
+    /usr/local/include/X11    \
+    /usr/local/include/X11R6  \
+    /usr/local/include/X11R5  \
+    /usr/local/include/X11R4  \
+                              \
+    /usr/X386/include         \
+    /usr/x386/include         \
+    /usr/XFree86/include/X11  \
+                              \
+    /usr/include              \
+    /usr/local/include        \
+    /usr/unsupported/include  \
+    /usr/athena/include       \
+    /usr/local/x11r5/include  \
+    /usr/lpp/Xamples/include  \
+    ; \
+  do
+    if test -r "$ac_dir/$x_direct_test_include"; then
+      X11INCLUDEPATH=$ac_dir
+      break
+    fi
+  done
+fi
+
+# Not found
+if [ -z "$X11INCLUDEPATH" ]
+then
+    gui_type="";
+fi
+
+if [ -z "$X11LIBPATH" ]
+then
+# Look for the header file in a standard set of common directories.
+x_direct_test_library="Xp";
+# Check X11 before X11Rn because it is often a symlink to the current release.
+for ac_dir in `echo "$X11INCLUDEPATH" | sed s/include/lib/` \
+    /usr/openwin/lib      \
+    /usr/openwin/share/lib \
+                              \
+    /usr/X11/lib          \
+    /usr/X11R6/lib        \
+    /usr/X11R5/lib        \
+    /usr/X11R4/lib        \
+                          \
+    /usr/lib/X11          \
+    /usr/lib/X11R6        \
+    /usr/lib/X11R5        \
+    /usr/lib/X11R4        \
+                          \
+    /usr/local/X11/lib    \
+    /usr/local/X11R6/lib  \
+    /usr/local/X11R5/lib  \
+    /usr/local/X11R4/lib  \
+                          \
+    /usr/local/lib/X11    \
+    /usr/local/lib/X11R6  \
+    /usr/local/lib/X11R5  \
+    /usr/local/lib/X11R4  \
+                          \
+    /usr/X386/lib         \
+    /usr/x386/lib         \
+    /usr/XFree86/lib/X11  \
+                          \
+    /usr/lib              \
+    /usr/local/lib        \
+    /usr/unsupported/lib  \
+    /usr/athena/lib       \
+    /usr/local/x11r5/lib  \
+    /usr/lpp/Xamples/lib  \
+    /lib/usr/lib/X11	  \
+    ; \
+do
+  for ac_extension in a so sl dll.a; do
+    if test -r $ac_dir/lib${x_direct_test_library}.$ac_extension; then
+      X11LIBPATH=$ac_dir
+      break 2
+    fi
+  done
+done
+fi
+
+if [ -z "$X11LIBPATH" ]
+then
+    gui_type="";
+fi
+
+if [ -z "$MOTIFINCLUDEPATH" ]
+then
+# Look for the header file in a standard set of common directories.
+x_direct_test_include=Xm/Xm.h
+  for ac_dir in                         \
+    /usr/include	                \
+    /usr/dt/include                     \
+    /usr/X11R6/LessTif/Motif1.2/include \
+    /usr/X11R6/include                  \
+    /usr/local/lesstif/include          \
+    /usr/lesstif/include                \
+    /usr/local/X11R6/include            \
+    /sw/include                         \
+    ; \
+  do
+    if test -r "$ac_dir/$x_direct_test_include"; then
+      MOTIFINCLUDEPATH=$ac_dir
+      break
+    fi
+  done
+fi
+
+if [ -z "$MOTIFINCLUDEPATH" ]
+then
+    gui_type=""
+fi
+
+if [ -z "$MOTIFLIBPATH" ]
+then
+# Look for the header file in a standard set of common directories.
+x_direct_test_library="Xm";
+# Check X11 before X11Rn because it is often a symlink to the current release.
+for ac_dir in `echo "$XMOTIFINCLUDEPATH" | sed s/include/lib/` \
+  for ac_dir in                         \
+    /usr/lib			    \
+    /usr/dt/lib                     \
+    /usr/X11R6/LessTif/Motif1.2/lib \
+    /usr/X11R6/lib                  \
+    /usr/local/lesstif/lib          \
+    /usr/lesstif/lib                \
+    /usr/local/X11R6/lib            \
+    /sw/lib                         \
+    ; \
+do
+  for ac_extension in a so sl; do
+    if test -r $ac_dir/lib${x_direct_test_library}.$ac_extension; then
+      MOTIFLIBPATH=$ac_dir
+      break 2
+    fi
+  done
+done
+fi
+
+if [ -z "$MOTIFLIBPATH" ]
+then
+    gui_type=""
+fi
+
+if [ -z "$gui_type" ]
+then
+    echo "$ew_t""no"
+else
+    echo "$ew_t""yes"
+fi
+
+CXXFLAGSX11="$CXXFLAGSOP -I$MOTIFINCLUDEPATH -I$X11INCLUDEPATH"
+LDFLAGSX11="-Llib -lpandore $LIB_FLAGS -L$MOTIFLIBPATH -L$X11LIBPATH -lXm -lXt -lX11 -lXp -lXext -lm"
+
+fi #fin MOTIF
+
+
+
+
+##
+## 7. OPERS and OBJECTS
+##
+
+OBJLIB="OBJ="
+OPERS="OPERS="
+ALL="lib opers"
+CLEAN="clean:
+	-\$(RM) \$(OBJ)"
+DISTCLEAN="distclean: clean
+	-\$(RM) \$(TARGETS)
+	-\$(RM) -r deps
+	-\$(RM) pandore
+	-\$(RM) Makefile"
+
+DEPENDENCIES=
+mkdir -p lib bin deps #boxes
+chmod 755 bin deps #boxes
+
+echo $ew_n "generating dependencies for objects files... ""$ew_c"
+for i in src/objects/*.cpp 
+do
+    echo $ew_n `basename $i`", $ew_c";
+    OBJLIB=$OBJLIB" src/objects/`basename $i .cpp`.o"
+    DEPFILE="deps/`basename $i`.dep"
+    [ ! -f $DEPFILE ] && $CXX $CXXFLAGS $CXXFLAGSOBJ -MM $i | sed -e 's/^\(.*\.o\)/src\/objects\/\1/' >> $DEPFILE
+done
+echo "... done."
+
+#echo $ew_n "generating dependencies for operators files... ""$ew_c"
+#for i in src/operatorsP*/*/*.cpp
+#do
+#    if [ "`basename $i .cpp`" = "*" ]
+#    then continue;
+#    fi
+#    echo $ew_n `basename $i`", $ew_c";
+#    OPERS=$OPERS" \\
+#	bin/`basename $i .cpp`"
+#    DEPFILE="deps/`basename $i`.dep"
+#    [ ! -f $DEPFILE ] && $CXX $CXXFLAGS $CXXFLAGSOP -MM $i | sed -e 's/^\(.*\)\#.o/bin\/\1/' >> $DEPFILE
+#done
+#echo "... done."
+
+# VIEWERS
+if [ "x$gui_type" = "xQt" ]
+then
+    echo $ew_n "generating Makefile for src/viewers/Qt""... $ew_c"
+    (cd src/viewers/Qt && ${qmake4} $QMAKEOPT pvisu.pro)
+    OPERS="$OPERS \\
+	$visu_exe \\
+	$draw_exe"
+    DISTCLEAN="$DISTCLEAN
+	-\$(RM) $draw_exe
+	cd src/viewers/Qt && \$(MAKE) distclean"
+    CLEAN="$CLEAN
+	cd src/viewers/Qt && \$(MAKE) clean"
+    DEPENDENCIES="$DEPENDENCIES
+$visu_exe: FORCE
+	cd src/viewers/Qt && \$(MAKE)
+$draw_exe: $visu_exe
+	mkdir -p `dirname $draw_exe`
+	\$(COPY) $visu_exe $draw_exe"
+    echo 'done.'
+fi
+
+if [ "x$gui_type" = "xMotif" ]
+then
+    echo $ew_n "generating Makefile for src/viewers/Motif""... $ew_c"
+    OPERS="$OPERS \\
+	bin/pvisu \\
+	bin/pdraw"
+    DISTCLEAN="$DISTCLEAN
+	cd src/viewers/Motif && \$(MAKE) distclean"
+    DEPENDENCIES="$DEPENDENCIES
+bin/pvisu: FORCE
+	cd src/viewers/Motif && \$(MAKE) ../../../bin/pvisu
+bin/pdraw: FORCE
+	cd src/viewers/Motif && \$(MAKE) ../../../bin/pdraw"
+
+cat > src/viewers/Motif/Makefile <<EOF
+## Makefile PANDORE
+##  
+##-----------------------------------------------------------
+## DO NOT EDIT BY HAND
+## Autogenerated by ./configure.
+## If something is wrong, fix ./configure and run it again. 
+##-----------------------------------------------------------
+##
+## GREYC - IMAGE
+## 6, boulevard Maréchal Juin 14050 CAEN.
+##
+
+RM          = $RM
+CXX         = $CXX
+CXXFLAGSX11 = -I../../../include $CXXFLAGS $CXXFLAGSX11
+LD          = $LD
+LDFLAGSX11  = -L../../../lib $LDFLAGSX11
+
+TARGET      = ../../../bin/pvisu ../../../bin/pdraw
+
+.IGNORE:
+
+.PHONY: all distclean
+
+# Avoid removing intermediate files.
+.PRECIOUS: %.cpp
+
+all: \$(TARGET)
+
+distclean:
+	\$(RM) Makefile
+
+../../../bin/%: %.cpp
+	\$(CXX) \$(CXXFLAGSX11) -o \$@ \$< \$(LDFLAGSX11)
+
+#
+# dependencies :
+#
+../../../bin/pvisu: pvisu.cpp visumotif.cpp visuoutil.cpp
+../../../bin/pdraw: pdraw.cpp pvisu.cpp visumotif.cpp visuoutil.cpp
+EOF
+fi
+
+
+##
+## 8. BOXES
+##
+
+#boxes=
+
+#for i in boxes/*
+#do
+#    if [ -d $i -a -x $i ]
+#    then
+#	box=`basename $i`
+#	boxes="$boxes $box"
+#	$RM -r boxes/$box/bin
+#	$LN_S ../../bin boxes/$box/bin
+#	$RM doc/operators/$box
+#	$LN_S ../../boxes/$box/doc doc/operators/$box
+#	echo $ew_n "adding box $box""... $ew_c"
+#        if [ -f $i/configure ]
+#	then (cd $i && ./configure --with-pandore=../.. 2>&1 1>/dev/null)
+#	fi
+#	if  [ -f $i/Makefile ]
+#	then
+#	    echo "done."
+#	else
+#	    echo "no."
+#	fi
+#    fi
+#done
+
+#if [ -n "$boxes" ]
+#then
+#ALL="$ALL boxes"
+#BOXENTRIES=
+#for i in $boxes
+#do
+#DISTCLEAN="$DISTCLEAN
+#	-\$(RM) doc/operators/$i
+#	cd boxes/$i && make distclean
+#	-\$(RM) boxes/$i/bin"
+#BOXENTRIES="$BOXENTRIES
+#$i:
+#	cd boxes/$i && make"
+#done
+#fi
+
+##
+## 9. Makefile
+##
+
+echo $ew_n "generating Makefile""... $ew_c"
+
+DYN_LIB_NAME=${LIB_PREFIX}${LIB_NAME}.${DYN_LIB_SUFFIX}
+STATIC_LIB_NAME=${LIB_PREFIX}${LIB_NAME}.${STATIC_LIB_SUFFIX}
+DISTCLEAN="$DISTCLEAN
+	-\$(RM) $DYN_LIB_NAME
+	-\$(RM) $STATIC_LIB_NAME"
+
+cat > Makefile <<EOF
+## Makefile PANDORE
+##  
+##-----------------------------------------------------------
+## DO NOT EDIT BY HAND
+## Autogenerated by ./configure.
+## If something is wrong, fix ./configure and run it again. 
+##-----------------------------------------------------------
+##
+## GREYC - IMAGE
+## 6, boulevard Maréchal Juin 14050 CAEN.
+##
+
+RM           = $RM
+AR           = $AR 
+ARFLAGS      = $ARFLAGS
+CXX          = $CXX
+CXXFLAGS     = $CXXFLAGS
+CXXFLAGSOBJ  = \$(CXXFLAGS) $CXXFLAGSOBJ
+CXXFLAGSOP   = \$(CXXFLAGS) $CXXFLAGSOP
+LD           = $LD
+LDFLAGSLIB   = $LDFLAGS $LDFLAGSLIB
+LDFLAGSOP    = $LDFLAGS $LDFLAGSOP
+PERL         = $PERL
+PPP          = $PPP
+MAKE         = $MAKE
+COPY         = $COPY
+INSTALL_FILE = $COPY_FILE
+INSTALL_DIR  = $COPY_DIR
+LN_S         = $LN_S
+
+$OBJLIB
+$OPERS
+EOF
+
+cat >> Makefile <<EOF
+
+# Avoid removing intermediates files.
+.PRECIOUS: %.cpp
+
+.IGNORE:
+
+.PHONY: all clean cleandist distclean $ALL
+
+DYN_LIB= lib/${DYN_LIB_NAME}
+STATIC_LIB= lib/${STATIC_LIB_NAME}
+TARGETS= \$(LIB) \$(OPERS)
+
+all: $ALL
+
+EOF
+if [ "$CFG_STATIC" = "yes" ]
+then 
+echo "lib: \$(DYN_LIB) \$(STATIC_LIB)" >> Makefile
+else
+echo "lib: \$(DYN_LIB)" >> Makefile
+fi
+cat >> Makefile <<EOF
+
+opers: \$(OPERS) \$(STATIC_LIB)
+
+#boxes: ${boxes}
+#$BOXENTRIES
+
+FORCE:
+
+\$(DYN_LIB): \$(OBJ)
+	\$(RM) \$@
+	\$(LD) -o \$@ \$(LDFLAGSLIB) \$(OBJ)
+	chmod 755 \$@
+
+\$(STATIC_LIB): \$(OBJ)
+	\$(RM) \$@
+	\$(AR) \$(ARFLAGS) \$@ \$(OBJ)
+	chmod 644 \$@
+
+src/objects/%.o: src/objects/%.cpp  include/%.h
+	\$(CXX) \$(CXXFLAGSOBJ) -c -o \$@ \$< 
+
+EOF
+
+#for i in src/operatorsP*/*
+#do
+#if [ -d $i ]; then
+#cat >> Makefile <<EOF
+#bin/%: $i/%.cpp
+#	\$(CXX) \$(CXXFLAGSOP) -o \$@ \$< \$(LDFLAGSOP)
+#EOF
+#fi
+#done
+
+if test -n "$PERL";then
+cat >> Makefile <<EOF
+%.cpp : %.cct etc/macros/template.pl etc/macros/Macro.pm etc/macros/init.pl etc/macros/pand_macros include/main.h include/pandore.h
+	\$(PPP) \$< > \$@ || \$(RM) \$@
+
+%.h : %.ht etc/macros/template.pl etc/macros/Macro.pm etc/macros/init.pl etc/macros/pand_macros include/main.h include/pandore.h
+	\$(PPP) \$< > \$@ || \$(RM) \$@
+EOF
+fi
+
+#Cleaning facilities.
+cat >> Makefile <<EOF
+$CLEAN
+
+cleandist: distclean
+
+$DISTCLEAN
+EOF
+if [ ${bindir} = "." ]
+then
+directory=`pwd`
+cat >> Makefile <<EOF
+install:
+	@echo "Installation folder: ${directory}"
+	@echo "done".
+
+uninstall:
+	@echo "done".
+EOF
+else
+cat >> Makefile <<EOF
+install:
+	@echo "Installation folder: ${bindir}"
+	-\$(INSTALL_FILE) "./pandore" "${bindir}/pandore"
+	-chmod gou+x "${bindir}/pandore"
+
+uninstall:
+	-\$(RM) "${bindir}/pandore"
+EOF
+fi
+cat >> Makefile <<EOF
+
+#
+# dependencies :
+#
+EOF
+
+for i in deps/*.dep
+do
+cat $i >> Makefile
+done
+echo "$DEPENDENCIES" >> Makefile
+echo 'done.'
+
+
+exit
+##
+## 10. Pandore file
+##
+
+#Generates the Pandore script file
+echo $ew_n "generating 'pandore' script file""... $ew_c"
+
+# Get the absolute path name for bindir.
+pandorehome=`pwd`
+
+if [ "$macapp" -eq 1 ]
+then
+binpath="\$PANDOREHOME/bin:\$PANDOREHOME/`dirname $visu_exe`:\$PANDOREHOME/`dirname $draw_exe`"
+else
+binpath="\$PANDOREHOME/bin"
+fi
+
+cat > ./pandore <<EOF
+#!/bin/sh
+
+PANDOREHOME=$pandorehome
+PATH=$binpath:\$PATH
+$LIBPATH=\$PANDOREHOME/lib:\$$LIBPATH
+export PATH $LIBPATH PANDOREHOME
+
+version="`cat ./VERSION.txt`"
+
+echo ;
+echo "PANDORE Version "\$version
+echo "GREYC-IMAGE @ Caen France"
+echo;
+
+#SHELL=${SHELL:-/bin/bash}
+\$SHELL
+
+EOF
+
+chmod gou+x ./pandore
+
+echo 'done.'
+
+##
+## finally save the executed command in the config.status file
+##
+if [ $config_name != "config.status" ]; then
+    CONFIG_STATUS="./$config_name $config_cmdline"
+    echo "#! /bin/sh" >$config_path/config.status
+    echo "# Generated automatically by configure." >>$config_path/config.status
+    echo "# Run this file to recreate the current configuration." >>$config_path/config.status
+    echo "# This directory was configured as follows," >>$config_path/config.status
+    echo "# on host `(hostname || uname -n) 2>/dev/null | sed 1q`:" >>$config_path/config.status
+    echo "" >>$config_path/config.status
+    echo "$CONFIG_STATUS" >>$config_path/config.status
+    chmod +x $config_path/config.status
+fi
+
+###
+### 11. SUMMARY
+###
+echo " " 1>&2
+echo " " 1>&2
+echo "SUMMARY" 1>&2
+echo "" 1>&2
+echo "   Your system is:" $OS 1>&2
+echo "   Perl interpreter is:" $PERL 1>&2
+if [ "x$PERL" = "x" ]
+then
+    echo "*** WARNING! No perl binary detected!." 1>&2
+    echo "*** The installed release is a restricted version of Pandore." 1>&2
+fi
+echo "   make command is:" $MAKE  1>&2
+echo "   C++ compiler is:" $CXX 1>&2
+echo "   Linker is:" $LD 1>&2
+echo "" 1>&2
+echo "   Dynamic library libpandore is:" ${DYN_LIB_NAME} 1>&2
+echo "   Compilation options for object files:" $CXXFLAGS $CXXFLAGSOBJ 1>&2
+echo "   Linker options for object files:" $LDFLAGSLIB 1>&2
+echo "" 1>&2
+echo "   Compilation options for operators:" $CXXFLAGS $CXXFLAGSOP 1>&2
+echo "   Linker options for operators:" $LDFLAGSOP 1>&2
+echo "" 1>&2
+
+echo "   The Graphical User Interface is: $gui_type" 1>&2
+if [ "x$gui_type" = "x" ]
+then
+    echo "*** WARNING! No Graphical User Interface detected." 1>&2
+    echo "*** Please, install the lastest Qt package and rerun configure." 1>&2
+    echo "*** The installed release of Pandore is a blind version " 1>&2
+    echo "*** without any visualization tool." 1>&2
+fi
+
+if [ "x$gui_type" = "xQt" ]
+then
+    echo "   Qt version: $gui_version" 1>&2
+    echo "" 1>&2
+fi
+
+
+if [ "x$gui_type" = "xMotif" ]
+then
+echo "*** WARNING! The lastest of the Pandore visualization tools uses Qt." 1>&2
+echo "*** Please, upgrade to the latest version of Qt and rerun configure." 1>&2
+echo "   The installed release of Pandore uses obsolete visualization tools." 1>&2
+echo "   Configuration for Motif" 1>&2
+echo "   X11 libraries directory:" $X11LIBPATH 1>&2
+echo "   X11 headers directory:"   $X11INCLUDEPATH 1>&2
+echo "   Motif libraries directory:" $MOTIFLIBPATH 1>&2
+echo "   Motif headers directory:"   $MOTIFINCLUDEPATH 1>&2
+echo "   Compilation options for graphical operators:" $CXXFLAGSX11 1>&2
+echo "   Linker options for graphical operators:" $LDFLAGSX11 1>&2
+echo " " 1>&2
+fi
+
+#if [ -n "boxes" ]
+#then
+#echo "   Installed boxes:" ${boxes:-'none.'} 1>&2
+#fi
+
+echo " " 1>&2
+echo "If this is correct, you can just type 'make' now at your shell prompt."
+echo "Once everything is built, you must run 'make install'."
+echo "The Pandore script will be installed into '$bindir'"
+echo "Otherwise, rerun configure with proper options"
+echo "(see the INSTALL file for a description of Pandore configure options.)"
+echo

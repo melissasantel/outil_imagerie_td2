@@ -1,0 +1,184 @@
+/* -*- c-basic-offset: 3; mode:c++ -*-
+ *
+ * PANDORE (PANTHEON Project)
+ *
+ * GREYC IMAGE
+ * 6 Boulevard Maréchal Juin
+ * F-14050 Caen Cedex France
+ *
+ * This file is free software. You can use it, distribute it
+ * and/or modify it. However, the entire risk to the quality
+ * and performance of this program is with you.
+ *
+ *
+ * For more information, refer to:
+ * http://www.greyc.ensicaen.fr/EquipeImage/Pandore/
+ */
+
+/**
+ * @author Alexandre Duret-Lutz - 1999-10-08
+ * @author Régis Clouard - 2001-04-10 (Version 3.0)
+ * @author Régis Clouard - 2006-02-21 (Fix bug on invert read array:float)
+ * @author Régis Clouard - 2006-11-10 (Fix bug on object deletion)
+ */
+
+#include <pandore.h>
+using namespace pandore;
+
+/**
+ * @file bundled.cpp
+ * @brief BundledObject for collections.
+ */
+
+static BundledObject *LoadBundledType( FILE *df,  const std::string &s, Long size, bool inversionMode ) {
+   BundledObject *bo;
+
+##begin loadBase TYPE
+   if (s == "TYPE") {
+      bo = new BundledValue<TYPE>;
+      bo->Load(df,inversionMode);
+   } else 
+      if (s == "Array:TYPE") {
+	 bo = new BundledArray<TYPE>(new TYPE[size/sizeof(TYPE)],size/sizeof(TYPE),true);
+	 bo->Load(df,inversionMode);
+      } else 
+##end
+##forallbase(loadBase,/./)
+      return NULL;
+   return bo;
+}
+
+static BundledObject *LoadBundledPobject( FILE *df,  const std::string &s, Long size, bool inversionMode ) {
+   BundledObject *bo;
+   Pobject **oa;
+
+##begin loadPobj TYPE
+   if (s == "Pobject:TYPE") {
+      bo = new BundledPobject(new TYPE, true);
+      bo->Load(df,inversionMode);
+   } else 
+      if (s == "PArray:TYPE") {
+	 // Use 4 bytes for pointers, even with 64-bit integers architecture
+	 // for compatibility reasons.
+	 oa=(Pobject**)new TYPE * [size];
+	 for (int i = 0; i< (int)(size); ++i) {
+	    oa[i] = new TYPE;
+	 }
+	 bo = new BundledPArray(oa,size,true);
+	 bo->Load(df,inversionMode);
+      } else 
+##end
+##forall(loadPobj,/./)
+	 return NULL;
+   return bo;
+}
+
+BundledObject *pandore::LoadBundledObject( FILE *df,  const std::string &s, Long size, bool inversionMode ) {
+   BundledObject *bo;
+   
+   if ((bo=LoadBundledType(df,s,size,inversionMode)) ||
+       (bo=LoadBundledPobject(df,s,size/POINTERSIZE,inversionMode))){
+      if (bo->valid())
+	 return bo;
+      delete bo;
+   }
+   return NULL;
+}
+
+/**
+ * Inverts MSB with LSB. It depends on the size of each
+ * elements.
+ * @param ptr	array that contains the elements to invert.
+ * @param size	size of each element
+ * @param nitems	number of elements to read.
+ */
+static void Reverse( void *ptr, size_t size,  size_t  nitems ) {
+   char *pti=(char*)ptr;
+   char tmp[16];
+   for (size_t i=0;i<nitems;i++) {
+      memcpy(tmp,pti,size);
+      for (size_t b=0;b<size;b++)
+ 	 *(pti++)=tmp[size-1-b];
+   }
+}
+
+/**
+ * Redefinition of fread to be hardware independant.
+ * @param ptr	array to store read elements.
+ * @param size	size of each element
+ * @param nitems	number of elements to read.
+ * @param stream	the stream to read. 
+ */
+size_t BundledObject::fdecode( void *ptr, size_t  size,  size_t  nitems,  FILE *stream ) {
+   size_t ret=fread(ptr,size,nitems,stream);
+   if (size > 1 && _inversionMode) {
+      Reverse(ptr,size,nitems);
+   }
+   return ret;
+}
+
+/**
+ * Redefinition of fread to be hardware independant.
+ * @param ptr	array that contains the elements to write.
+ * @param size	size of each element
+ * @param nitems	number of elements to read.
+ * @param stream	the stream to read. 
+ */
+size_t BundledObject::fencode( void *ptr, size_t size,  size_t  nitems,FILE *stream ) const {
+   return fwrite(ptr,size,nitems,stream);
+}
+
+// ARRAY  --------------------------------------------------
+template< typename T>
+void BundledArray<T>::Append(BundledObject *bo) {
+   BundledArray *ba = dynamic_cast< BundledArray * >(bo);
+   if (!ba)
+      return;
+   T *tmp = new T[_s/sizeof(T) + ba->NbrElements()];
+   int i,j;
+   for (i = 0; i < (int)(_s/sizeof(T)) ; ++i)
+      tmp[i] = _val[i];
+   for (j = 0; j < ba->NbrElements(); ++j)
+      tmp[i+j] = ba->Array()[j];
+   if (_allocated) {
+      delete _val;
+   }
+   _s += ba->NbrElements()*sizeof(T);
+   _val = tmp;
+}
+
+// POBJECT  --------------------------------------------------
+BundledObject *BundledPobject::ToArray() {
+   Pobject **z = new Pobject*[1];
+   *z = _val;
+   return new BundledPArray(z,1,true);
+}
+
+// PARRAY  --------------------------------------------------
+
+void BundledPArray::Append( BundledObject *bo ) {
+   BundledPArray *ba = dynamic_cast<BundledPArray*>(bo);
+   if (!ba)
+      return;
+   Pobject **tmp = new Pobject*[_s/sizeof(Pobject*) + ba->NbrElements()];
+   int i, j;
+   for (i = 0; i < (int)(_s/sizeof(Pobject*)) ; ++i)
+      tmp[i] = (Pobject*)(_val[i]->Clone());
+   for (j = 0; j < ba->NbrElements(); ++j)
+      tmp[i+j] =(Pobject*)(ba->PArray()[j]->Clone());
+   if (_allocated) {
+      for (int i = 0 ; i < (int)(_s/sizeof(Pobject*)); ++i)
+	 delete _val[i];
+      delete[] _val;
+   }
+   _val = tmp;
+   _s += ba->NbrElements()*sizeof(Pobject*);
+}
+
+// --------------------------------------------------
+
+##begin tmpl TYPE
+template class pandore::BundledValue<TYPE>;
+template class pandore::BundledArray<TYPE>;
+##end
+##forallbase(tmpl,/./)
