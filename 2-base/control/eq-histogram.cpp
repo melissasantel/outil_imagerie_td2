@@ -32,29 +32,25 @@ process(const char* imsname)
       ims_histogram.at(k) +=1;
     }
   }
-
-  // int l=0;
-  // while (l<256){
-  //   cout<< l << " : "<< ims_histogram.at(l)<<endl;
-  //   l++;
-  // }
-
+  //Calcul the histogram cumule
   vector<int> ims_histogram_cm = vector<int>(256);
   for(int k=0;k<(int)ims_histogram_cm.size();k++){
-    for(int l=0;l<k; l++){
+    for(int l=0;l<=k; l++){
       ims_histogram_cm.at(k) += ims_histogram.at(l);
     }
   }
 
   // int l_2=0;
-  // while (l_2<25){
+  // while (l_2<256){
+  //   cout<< l_2 << " : "<< ims_histogram.at(l_2)<<endl;
   //   cout<< l_2 << " : "<< ims_histogram_cm.at(l_2)<<endl;
   //   l_2++;
   // }
 
   //Make test with 255 and it's work
   int Imax = 255;
-  //Re calculate the image
+  //Re calculate by hand the image
+  //with the cumulate normalized histogram method
   int k_2;
   Mat imd_eq(ims.size(), CV_8UC1);
   for(int i=0;i<M;i++){
@@ -63,11 +59,28 @@ process(const char* imsname)
       imd_eq.at<Vec3b>(i,j)[0]= Imax*ims_histogram_cm.at(k_2)/(M*N);
     }
   }
-
   imshow("eq.png",imd_eq);
   waitKey(0);
-  imwrite("eq.png",imd_eq);
+  //Get an modified image
+  //with the cumulate normalized histogram method of opencv
+  Mat imd_eq_ocv(ims.size(), CV_8UC1);
+  equalizeHist(ims, imd_eq_ocv);
+  imshow("eq-ocv.png", imd_eq_ocv);
+  waitKey(0);
 
+  //Make diffenrence between the 2 method
+  // Mat diff_eg_h;
+  // diff_eg_h = imd_eq_ocv-imd_eq;
+  // imshow("diff.png",diff_eg_h);
+  // waitKey(0);
+
+  cvtColor(imd_eq,imd_eq,CV_GRAY2BGR);
+  imwrite("eq.png",imd_eq);
+  cvtColor(imd_eq_ocv,imd_eq_ocv,CV_GRAY2BGR);
+  imwrite("eq-ocv.png", imd_eq_ocv);
+
+
+  waitKey(0);
 }
 
 void
