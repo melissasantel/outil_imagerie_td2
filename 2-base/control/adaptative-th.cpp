@@ -8,7 +8,7 @@ using namespace cv;
 using namespace std;
 
 void
-process(const char* imsname, int radius, int cons)
+process(const char* imsname, int radius, int cst)
 {
   //Check the existence of the file, if the file doesn't exist the programme stop
   fstream infile(imsname);
@@ -19,14 +19,66 @@ process(const char* imsname, int radius, int cons)
   cout<< "\n############### exercice : adaptative-th ##############\n"<<endl;
   //Read the image load
   Mat ims = imread(imsname, 0);
+  Size s = ims.size();
+
+  //Calcul the neighbor tall
+  int block_size = 2*radius+1;
+
+  //Sum of the neighbor pixels
+  int pixels_neighbor_sum=0;
+  int neighbor_nb =0 ;
+
+  int value_FdeV;
+  int mean_pixels;
+
+  //Create the adaptative th image
+  Mat ims_th(s,CV_8UC1);
+
+  for(int i=0; i<s.height; i++){
+    for(int j=0; j<s.width; j++){
+
+      for(int l=-radius; l<=radius; l++){
+        for(int m=-radius ;m<=radius; m++){
+          if(i+l>=0 && j+m>=0 && i+l<s.height && j+m<s.width){
+            // cout<<"i : "<<i+l<<"  j: "<<j+m<<endl;
+            pixels_neighbor_sum += ims.at<uchar>(i+l,j+m);
+            neighbor_nb +=1;
+          }
+        }
+      }
+
+      mean_pixels = pixels_neighbor_sum/neighbor_nb;
+      value_FdeV = mean_pixels-cst;
+
+      if(ims.at<uchar>(i,j)<value_FdeV)
+        ims_th.at<uchar>(i,j)=0;
+      else
+        ims_th.at<uchar>(i,j)=255;
+
+      //Clear variables
+      value_FdeV=0;
+      mean_pixels=0;
+      pixels_neighbor_sum =0;
+      neighbor_nb =0;
+    }
+  }
+
+  imwrite("th.png",ims_th);
 
   Mat ims_th_ocv(ims.size(), CV_8UC1);
-  adaptiveThreshold(ims, ims_th_ocv,255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, radius, cons);
+  adaptiveThreshold(ims, ims_th_ocv,250, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, block_size, cst);
   imwrite("th-ocv-mean.png",ims_th_ocv);
 
+  //Calcul the difference between the two methods
+  Mat diff_th(ims.size(), CV_8UC1);
+  diff_th = ims_th-ims_th_ocv;
+  imwrite("diff.png",diff_th);
+
   Mat ims_th_gauss(ims.size(), CV_8UC1);
-  adaptiveThreshold(ims, ims_th_gauss,255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, radius, cons);
+  adaptiveThreshold(ims, ims_th_gauss,255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, block_size, cst);
   imwrite("th-ocv-gauss.png",ims_th_gauss);
+
+  waitKey(0);
 
 
 }

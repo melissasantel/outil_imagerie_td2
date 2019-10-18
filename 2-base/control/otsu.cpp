@@ -19,6 +19,13 @@ process(const char* imsname)
   cout<< "\n############### exercice : hsv-modification ##############\n"<<endl;
   //Read the image load
   Mat ims = imread(imsname, 0);
+  Size s = ims.size();
+
+  Mat imd_otsu_ocv(s,CV_8UC1) ;
+  double manual_T = threshold(ims, imd_otsu_ocv, 123, 255, THRESH_BINARY+THRESH_OTSU);
+  cout << "manual_T " << manual_T<<endl;
+  imshow("otsu-th-ocv.png",imd_otsu_ocv);
+  waitKey(0);
 
 }
 
