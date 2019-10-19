@@ -22,6 +22,8 @@ test:
 	# ./eq-histogram ../data/eq-ex.png; pvisu ../data/eq-ex.png; pvisu eq.png; pvisu eq-ocv.png; pvisu diff.png
 	# ./adaptative-th ../data/th-ex.png 3 4; pvisu th-ex.png; pvisu th.png; pvisu th-ocv-mean.png; pvisu th-ocv-gauss.png; pvisu diff.png
 	./otsu ../data/contraste-3.png
+	./otsu ../data/text.png
+
 
 .PHONY: clean
 clean:
