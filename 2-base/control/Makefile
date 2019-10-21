@@ -21,8 +21,8 @@ test:
 	# ./hsv-modification 100 0 0 ../data/horse.png horse-hsv.png; pvisu horse-hsv.png
 	# ./eq-histogram ../data/eq-ex.png; pvisu ../data/eq-ex.png; pvisu eq.png; pvisu eq-ocv.png; pvisu diff.png
 	# ./adaptative-th ../data/th-ex.png 3 4; pvisu th-ex.png; pvisu th.png; pvisu th-ocv-mean.png; pvisu th-ocv-gauss.png; pvisu diff.png
-	./otsu ../data/contraste-3.png
-	./otsu ../data/text.png
+	./otsu ../data/contraste-3.png; pvisu ../data/contraste-3.png; pvisu otsu-th.png; pvisu otsu-th-ocv.png
+	./otsu ../data/text.png; pvisu ../data/text.png; pvisu otsu-th.png; pvisu otsu-th-ocv.png
 
 
 .PHONY: clean

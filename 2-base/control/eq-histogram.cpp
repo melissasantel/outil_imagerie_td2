@@ -52,7 +52,6 @@ process(const char* imsname)
       imd_eq.at<uchar>(i,j)= Imax*ims_histogram_cm.at(k_2)/(M*N);
     }
   }
-
   imwrite("eq.png",imd_eq);
 
   //Get an modified image
@@ -61,11 +60,12 @@ process(const char* imsname)
   equalizeHist(ims, imd_eq_ocv);
   imwrite("eq-ocv.png", imd_eq_ocv);
 
-
   //Make diffenrence between the 2 method
   Mat diff_eg_h;
   diff_eg_h = imd_eq_ocv-imd_eq;
   imwrite("diff.png",diff_eg_h);
+
+  waitKey(0);
 
 }
 

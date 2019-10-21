@@ -41,14 +41,14 @@ process(int h, int s, int v, const char* imsname, const char* imdname)
   waitKey(0);
 
   //Changed the H,S,V channels of imsHSV image
+  //With the arguments given h, s, v
   imsHSV_H +=h;
   imsHSV_S +=s;
   imsHSV_V +=v;
 
-  Mat imd;
-  Mat imsRGB;
+  Mat imd(ims.size(), CV_8UC3);
 
-  //Merge the matrice
+  //Merge the matrice to make an image on 3 chanels
   vector<Mat> hsv_channels;
   hsv_channels.push_back(imsHSV_H);
   hsv_channels.push_back(imsHSV_S);
@@ -56,10 +56,8 @@ process(int h, int s, int v, const char* imsname, const char* imdname)
   merge(hsv_channels, imd);
 
   //Display the HSV image reconvert to RGB
-  cvtColor(imd,imsRGB, CV_HSV2BGR);
-  imshow(imdname, imsRGB);
-  waitKey(0);
-
+  cvtColor(imd,imd, CV_HSV2BGR);
+  //Save the produce image
   imwrite(imdname,imd);
 }
 

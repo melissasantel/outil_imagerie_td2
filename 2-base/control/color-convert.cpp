@@ -36,18 +36,18 @@ process(const char* imsname)
   waitKey(0);
 
   //Convert the loaded image to RGB to YCbCr image
-  Mat imsYCbCr(ims.size(),CV_8UC3);
-  cvtColor(ims,imsYCbCr,CV_BGR2YCrCb);
-  Mat imsYCbCrSplit[3];
-  split(imsYCbCr,imsYCbCrSplit);
+  Mat imsYCrCb(ims.size(),CV_8UC3);
+  cvtColor(ims,imsYCrCb,CV_BGR2YCrCb);
+  Mat imsYCrCbSplit[3];
+  split(imsYCrCb,imsYCrCbSplit);
   //Show the Y range
-  imshow("Y", imsYCbCrSplit[0]);
+  imshow("Y", imsYCrCbSplit[0]);
   waitKey(0);
   //Show the Cb range
-  imshow("Cb", imsYCbCrSplit[1]);
+  imshow("Cr", imsYCrCbSplit[1]);
   waitKey(0);
   //Show the Cr range
-  imshow("Cr", imsYCbCrSplit[2]);
+  imshow("Cb", imsYCrCbSplit[2]);
   waitKey(0);
 
   //Convert the loaded image to RGB to gray image
@@ -59,17 +59,20 @@ process(const char* imsname)
 
   //Convert the YCbCr image previously created to a color
   Mat imsBGR(ims.size(),CV_8UC3);
-  cvtColor(imsYCbCr,imsBGR,CV_YCrCb2BGR);
+  cvtColor(imsYCrCb,imsBGR,CV_YCrCb2BGR);
   //Show the BGR image
-  imshow("RGB→YCbCr→RGB",imsBGR);
+  imshow("RGB→YCrCb→RGB",imsBGR);
   waitKey(0);
 
-  Mat diffGrayAndY = imsGray - imsYCbCrSplit[0];
+  //Make the difference between the image convert in Gray
+  Mat diffGrayAndY = imsGray - imsYCrCbSplit[0];
   imshow("Difference image Gray et Y",diffGrayAndY);
   waitKey(0);
 
+  //Make the difference between the first image and the image convert to YCbCr
+  //and then reconvert to RGB
   Mat diffInitAndRGB = ims - imsBGR;
-  imshow("Difference image initiale et reconvertit",diffInitAndRGB);
+  imshow("Difference image RGB initiale et reconvertit",diffInitAndRGB);
   waitKey(0);
 
 }

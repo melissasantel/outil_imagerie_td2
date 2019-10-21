@@ -40,7 +40,6 @@ process(const char* imsname, int radius, int cst)
       for(int l=-radius; l<=radius; l++){
         for(int m=-radius ;m<=radius; m++){
           if(i+l>=0 && j+m>=0 && i+l<s.height && j+m<s.width){
-            // cout<<"i : "<<i+l<<"  j: "<<j+m<<endl;
             pixels_neighbor_sum += ims.at<uchar>(i+l,j+m);
             neighbor_nb +=1;
           }
@@ -79,8 +78,6 @@ process(const char* imsname, int radius, int cst)
   imwrite("th-ocv-gauss.png",ims_th_gauss);
 
   waitKey(0);
-
-
 }
 
 void
