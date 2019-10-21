@@ -66,10 +66,12 @@ process(const char* imsname)
   Mat imd_otsu(s,CV_8UC1);
   for(int i=0; i<s.height;i++){
     for(int j=0; j<s.width; j++){
-      if(ims.at<uchar>(i,j)>threshold_value)
-        imd_otsu.at<uchar>(i,j) = 1;
-      else
-        imd_otsu.at<uchar>(i,j) = 0;
+      if(ims.at<uchar>(i,j)>threshold_value){
+        imd_otsu.at<uchar>(i,j) = 255;
+      }
+      else{
+          imd_otsu.at<uchar>(i,j) = 0;
+      }
     }
   }
 
